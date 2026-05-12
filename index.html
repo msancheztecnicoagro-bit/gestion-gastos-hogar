@@ -1,25 +1,60 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi App de Gastos</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    // PEGA AQUÍ EL CÓDIGO DE REACT QUE TE DI EN EL PASO 2 (Desde el "const [gastos..." hasta el final de la función)
-    // Pero para que funcione en este archivo simple, solo pega el contenido de la función App y el render:
-    
-    function App() {
-      /* El código de arriba */
-    }
+import React, { useState, useEffect } from 'react';
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+export default function App() {
+  const [gastos, setGastos] = useState(() => {
+    const salvo = localStorage.getItem("gastos");
+    return salvo ? JSON.parse(salvo) : [];
+  });
+  const [nombre, setNombre] = useState("");
+  const [monto, setMonto] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("gastos", JSON.stringify(gastos));
+  }, [gastos]);
+
+  const agregarGasto = (e) => {
+    e.preventDefault();
+    if (!nombre || !monto) return;
+    const nuevoGasto = { id: Date.now(), nombre, monto: parseFloat(monto) };
+    setGastos([...gastos, nuevoGasto]);
+    setNombre(""); setMonto("");
+  };
+
+  const eliminarGasto = (id) => {
+    setGastos(gastos.filter(g => g.id !== id));
+  };
+
+  const total = gastos.reduce((acc, curr) => acc + curr.monto, 0);
+
+  return (
+    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '500px', margin: 'auto' }}>
+      <h1>🏠 Gastos del Mes</h1>
+      <form onSubmit={agregarGasto} style={{ marginBottom: '20px' }}>
+        <input 
+          type="text" placeholder="Ej: Arriendo" 
+          value={nombre} onChange={(e) => setNombre(e.target.value)}
+          style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px' }}
+        />
+        <input 
+          type="number" placeholder="Monto (ej: 50000)" 
+          value={monto} onChange={(e) => setMonto(e.target.value)}
+          style={{ display: 'block', width: '100%', marginBottom: '10px', padding: '8px' }}
+        />
+        <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#0070f3', color: 'white', border: 'none', borderRadius: '5px' }}>
+          Añadir Gasto
+        </button>
+      </form>
+
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        {gastos.map(g => (
+          <li key={g.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0' }}>
+            {g.nombre}: <strong>${g.monto.toLocaleString()}</strong>
+            <button onClick={() => eliminarGasto(g.id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>X</button>
+          </li>
+        ))}
+      </ul>
+
+      <h2 style={{ marginTop: '20px' }}>Total: ${total.toLocaleString()}</h2>
+    </div>
+  );
+}
