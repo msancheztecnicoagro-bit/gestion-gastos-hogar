@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor de Gastos Personales</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+    padding:20px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+    margin-bottom:20px;
+    color:#2c3e50;
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card h3{
+    margin-bottom:10px;
+    color:#666;
+}
+
+.balance{
+    color:#3498db;
+}
+
+.ingresos{
+    color:#27ae60;
+}
+
+.gastos{
+    color:#e74c3c;
+}
+
+.formulario{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+}
+
+.formulario form{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+}
+
+input, select, button{
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:8px;
+}
+
+button{
+    background:#3498db;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#2980b9;
+}
+
+.movimientos{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th, td{
+    padding:12px;
+    text-align:left;
+    border-bottom:1px solid #ddd;
+}
+
+.ingreso{
+    color:#27ae60;
+    font-weight:bold;
+}
+
+.gasto{
+    color:#e74c3c;
+    font-weight:bold;
+}
+
+.eliminar{
+    background:#e74c3c;
+    padding:8px 12px;
+}
+
+.eliminar:hover{
+    background:#c0392b;
+}
+
+@media(max-width:768px){
+    table{
+        font-size:14px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>💰 Gestor de Gastos Personales</h1>
+
+<div class="dashboard">
+
+<div class="card">
+<h3>Balance</h3>
+<h2 class="balance" id="balance">$0</h2>
+</div>
+
+<div class="card">
+<h3>Ingresos</h3>
+<h2 class="ingresos" id="ingresos">$0</h2>
+</div>
+
+<div class="card">
+<h3>Gastos</h3>
+<h2 class="gastos" id="gastos">$0</h2>
+</div>
+
+</div>
+
+<div class="formulario">
+
+<form id="formulario">
+
+<input type="text" id="descripcion" placeholder="Descripción" required>
+
+<input type="number" id="monto" placeholder="Monto" required>
+
+<select id="tipo">
+<option value="ingreso">Ingreso</option>
+<option value="gasto">Gasto</option>
+</select>
+
+<select id="categoria">
+<option>Alimentación</option>
+<option>Transporte</option>
+<option>Hogar</option>
+<option>Salud</option>
+<option>Entretenimiento</option>
+<option>Sueldo</option>
+<option>Otros</option>
+</select>
+
+<button type="submit">Agregar</button>
+
+</form>
+
+</div>
+
+<div class="movimientos">
+
+<h2>Movimientos</h2>
+
+<br>
+
+<table>
+
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Descripción</th>
+<th>Categoría</th>
+<th>Monto</th>
+<th>Acción</th>
+</tr>
+</thead>
+
+<tbody id="tablaMovimientos"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<script>
+
+let movimientos = JSON.parse(localStorage.getItem("movimientos")) || [];
+
+const formulario = document.getElementById("formulario");
+const tabla = document.getElementById("tablaMovimientos");
+
+function guardarDatos(){
+    localStorage.setItem("movimientos", JSON.stringify(movimientos));
+}
+
+function actualizarResumen(){
+
+    let ingresos = 0;
+    let gastos = 0;
+
+    movimientos.forEach(m => {
+        if(m.tipo === "ingreso"){
+            ingresos += m.monto;
+        }else{
+            gastos += m.monto;
+        }
+    });
+
+    document.getElementById("ingresos").textContent =
+        "$" + ingresos.toLocaleString();
+
+    document.getElementById("gastos").textContent =
+        "$" + gastos.toLocaleString();
+
+    document.getElementById("balance").textContent =
+        "$" + (ingresos - gastos).toLocaleString();
+}
+
+function mostrarMovimientos(){
+
+    tabla.innerHTML = "";
+
+    movimientos.forEach((m,index)=>{
+
+        tabla.innerHTML += `
+        <tr>
+            <td>${m.fecha}</td>
+            <td>${m.descripcion}</td>
+            <td>${m.categoria}</td>
+            <td class="${m.tipo}">
+                $${m.monto.toLocaleString()}
+            </td>
+            <td>
+                <button class="eliminar"
+                onclick="eliminarMovimiento(${index})">
+                X
+                </button>
+            </td>
+        </tr>
+        `;
+    });
+
+    actualizarResumen();
+}
+
+function eliminarMovimiento(index){
+
+    movimientos.splice(index,1);
+
+    guardarDatos();
+    mostrarMovimientos();
+}
+
+formulario.addEventListener("submit",(e)=>{
+
+    e.preventDefault();
+
+    const movimiento = {
+        fecha:new Date().toLocaleDateString(),
+        descripcion:document.getElementById("descripcion").value,
+        monto:Number(document.getElementById("monto").value),
+        tipo:document.getElementById("tipo").value,
+        categoria:document.getElementById("categoria").value
+    };
+
+    movimientos.push(movimiento);
+
+    guardarDatos();
+    mostrarMovimientos();
+
+    formulario.reset();
+});
+
+mostrarMovimientos();
+
+</script>
+
+</body>
+</html>
